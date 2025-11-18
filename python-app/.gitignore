@@ -1,0 +1,13 @@
+__pycache__
+data
+*.DS_Store
+logs
+*.zip
+__MACOSX
+*.txt
+!requirements.txt
+.ipynb_checkpoints
+.env
+.venv
+src_multislip/__pycache__
+src_multislip/__MACOSX
