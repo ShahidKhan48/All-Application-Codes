@@ -1,0 +1,77 @@
+image: atlassian/default-image:2
+options:
+  docker: true
+  size: 2x
+definitions:
+  steps:
+    - step: &sonar-build
+        name: SonarQube analysis
+        script:
+          - pipe: sonarsource/sonarqube-scan:2.0.1
+            variables:
+              SONAR_HOST_URL: ${SONAR_HOST_URL}
+              SONAR_TOKEN: ${SONAR_TOKEN}
+  caches:
+    sonar: ~/.sonar
+  clone:
+    depth: full
+  services:
+    docker:
+      memory: 6144
+
+pipelines:
+  custom:
+    deploy-to-dev1:
+      - step: &download_ninja_service_helm_chart_step
+          name: "Download Helm chart - Ninja Service"
+          image: alpine/helm:3.10.0
+          script:
+            - helm registry login $DOCKER_REGISTRY_ID --username $DOCKER_REGISTRY_USERNAME --password $DOCKER_REGISTRY_PASSWORD
+            - helm pull oci://${DOCKER_REGISTRY_ID}/helm/ninja-service --version $HELM_VERSION
+            - tar zxvf ninja-service-*.tgz
+          artifacts:
+            - ninja-service/**
+      - stage:
+          name: "Deploy to Development 1"
+          deployment: "Development 1"
+          steps:
+            - step: &build_docker_script_step
+                name: "Build Docker Image"
+                image: ninjacartpublic.azurecr.io/builder:latest
+                services:
+                  - docker
+                caches:
+                  - docker
+                script:
+                  - echo ${NPMRC} > .npmrc # Add npmrc secret
+                  - echo ${NPM_REGISTRY_GROUP} >> .npmrc # Add registry alias
+                  - IMAGE="omni-agent-ui"
+                  - BUILD_ARG="--build-arg BUILD_ARG=build:$ENVIRONMENT_NAME --build-arg START_ARG=start:$ENVIRONMENT_NAME"
+                  - docker-build $IMAGE $BUILD_ARG
+            - step: &deploy_to_k8s_step
+                name: "Deploy"
+                image: ninjacartpublic.azurecr.io/deployer:latest
+                script:
+                  - deploy.sh omni-agent-ui ui
+
+    deploy-to-qa:
+      - step: *download_ninja_service_helm_chart_step
+      - stage:
+          name: "Deploy to QA"
+          deployment: "QA"
+          steps:
+            - step: *build_docker_script_step
+            - step: *deploy_to_k8s_step
+
+    deploy-to-prod:
+      - step: *download_ninja_service_helm_chart_step
+      - stage:
+          name: "Deploy to Production"
+          deployment: "Production"
+          trigger: manual
+          steps:
+            - step: *build_docker_script_step
+            - step: *deploy_to_k8s_step
+
+    deploy-to-sonar:
+      - step: *sonar-build
