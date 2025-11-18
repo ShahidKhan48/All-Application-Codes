@@ -1,0 +1,1 @@
+java -jar -javaagent:opentelemetry-javaagent.jar -Dotel.resource.attributes=service.name=nc-nfc-service -Xmx2G -Duser.timezone="UTC" -Dspring.profiles.active="${SPRING_PROFILE}" app.jar
