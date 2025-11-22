@@ -1,0 +1,36 @@
+# Development environment configuration
+replicaCount: 1
+
+image:
+  repository: shahidkhan48/nodejs-app
+  tag: "dev-latest"
+  pullPolicy: Always
+
+service:
+  targetPort: 3000
+
+ingress:
+  hosts:
+    - host: dev.your-domain.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+env:
+  - name: NODE_ENV
+    value: "development"
+  - name: PORT
+    value: "3000"
+
+# Docker registry credentials for dev
+imageCredentials:
+  registry: docker.io
+  username: shahidkhan48
+  password: your-password
+
+# Dev configuration
+config:
+  NODE_ENV: development
+  PORT: "3000"
+  API_URL: "https://dev-api.example.com"
+  DEBUG: "true"

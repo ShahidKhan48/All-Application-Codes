@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ui
+  namespace: ui
+  annotations:
+   kubernetes.io/ingress.class: nginx
+   # cert-manager annotations if using cert-manager for LetsEncrypt
+   # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  rules:
+  - host: your-domain.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nodejs-ui
+            port:
+              number: 80
+# tls:
+# - hosts:
+# - your-domain.example.com
+# secretName: nodejs-tls
